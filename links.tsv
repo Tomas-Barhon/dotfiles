@@ -5,7 +5,6 @@
 .config/omarchy	omarchy
 .config/ghostty	ghostty
 .config/git	git
-.config/lazygit	lazygit
 .config/mise	mise
 .config/hyprland-preview-share-picker/config.yaml	share-picker/config.yaml
 .config/starship.toml	starship.toml

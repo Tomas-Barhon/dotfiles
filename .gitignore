@@ -15,3 +15,6 @@ aether/custom/
 aether/themes/
 aether/migration-version
 aether/.protocol-handler-installed
+
+# nvim lockfile (rewritten by lazy.nvim on every plugin update)
+nvim/lazy-lock.json

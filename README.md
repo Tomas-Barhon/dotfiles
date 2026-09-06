@@ -12,7 +12,6 @@ re-applied after OS or package updates.
 | `omarchy/` (dir link)                  | `~/.config/omarchy/`                           |
 | `ghostty/` (dir link)                  | `~/.config/ghostty/`                           |
 | `git/` (dir link)                      | `~/.config/git/`                               |
-| `lazygit/` (dir link)                  | `~/.config/lazygit/`                           |
 | `mise/` (dir link)                     | `~/.config/mise/`                              |
 | `nvim/` (dir link)                     | `~/.config/nvim/`                              |
 | `share-picker/config.yaml` (file link) | `~/.config/hyprland-preview-share-picker/`     |
