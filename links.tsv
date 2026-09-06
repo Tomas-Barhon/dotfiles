@@ -1,0 +1,18 @@
+# Symlink manifest. One link per line: <target relative to $HOME><TAB><path in repo>.
+# Lines starting with # are ignored.
+# Whole directory entries are managed as a single directory symlink.
+.config/hypr	hypr
+.config/omarchy	omarchy
+.config/ghostty	ghostty
+.config/git	git
+.config/lazygit	lazygit
+.config/mise	mise
+.config/hyprland-preview-share-picker/config.yaml	share-picker/config.yaml
+.config/starship.toml	starship.toml
+.config/aether/blueprints/tomikkdyne-arch-personal.json	aether/blueprints/tomikkdyne-arch-personal.json
+.config/aether/favorites.json	aether/favorites.json
+.config/aether/settings.json	aether/settings.json
+.config/aether/theme.css	aether/theme.css
+.config/aether/wallhaven.json	aether/wallhaven.json
+.config/nvim	nvim
+.config/tmux/tmux.conf	tmux/tmux.conf

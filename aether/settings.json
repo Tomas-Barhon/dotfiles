@@ -1,0 +1,9 @@
+{
+  "includeNeovim": false,
+  "includeVscode": false,
+  "includeZed": true,
+  "includedApps": {},
+  "selectedNeovimConfig": "",
+  "videoCpuMode": false,
+  "wallpaperFolder": "/home/tomikkdyne/Wallpapers"
+}

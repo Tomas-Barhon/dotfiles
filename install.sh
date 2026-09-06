@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+# Dotfiles installer: manages symlinks from the live system into this repo.
+#
+# Links are declared in links.tsv, one per line:
+#   <target relative to $HOME><TAB><path relative to repo root>
+#
+# Usage:
+#   install.sh            Apply: adopt values into the repo if missing, back
+#                         up any real files in the way, then create/fix links.
+#   install.sh --check    Verify every link; exit non-zero on any drift.
+#                         Run this after omarchy update/refresh to spot links
+#                         that a package upgrade replaced with real files.
+#   install.sh --dry-run  Print what apply WOULD do without changing anything.
+#   install.sh --link <substr>  Restrict any mode to entries whose repo path
+#                               or target contains <substr>.
+
+set -u
+
+REPO_ROOT="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
+MANIFEST="$REPO_ROOT/links.tsv"
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+BACKUP_DIR="$REPO_ROOT/backup/$TIMESTAMP"
+
+ACTION="${1:-apply}"
+FILTER="${2:-}"
+
+# git only stores the executable bit; restore stricter modes after (re)linking.
+RESTRICTED_MODES=(
+  "omarchy/shell.json"
+)
+
+log()  { printf '\033[36m[dotfiles]\033[0m %s\n' "$*"; }
+warn() { printf '\033[33m[dotfiles]\033[0m %s\n' "$*" >&2; }
+ok()   { printf '\033[32m[dotfiles]\033[0m %s\n' "$*"; }
+err()  { printf '\033[31m[dotfiles]\033[0m %s\n' "$*" >&2; }
+
+entries() {
+  while IFS=$'\t' read -r rel repo; do
+    [ -z "${rel:-}" ] && continue
+    case "$rel" in \#*|'') continue ;; esac
+    printf '%s\t%s\n' "$rel" "$repo"
+  done < "$MANIFEST"
+}
+
+repo_empty() { # is a repo path present and, if a dir, empty?
+  local repo="$1"
+  [ ! -e "$repo" ] && return 0
+  if [ -d "$repo" ] && [ -z "$(find "$repo" -mindepth 1 -print -quit)" ]; then
+    return 0
+  fi
+  return 1
+}
+
+target_is_symlink_to() {
+  local target="$1" repo="$2"
+  [ -L "$target" ] && [ "$(realpath "$target")" = "$repo" ]
+}
+
+restore_modes() {
+  for f in "${RESTRICTED_MODES[@]}"; do
+    local p="$REPO_ROOT/$f"
+    if [ -e "$p" ]; then
+      chmod 600 "$p"
+    fi
+  done
+}
+
+apply_link() {
+  local rel="$1" repo="$2"
+  local target="$HOME/$rel" rp="$REPO_ROOT/$repo"
+  local was_dir=0
+
+  log "link: $rel  ->  $repo"
+
+  if target_is_symlink_to "$target" "$rp"; then
+    ok "  already linked correctly"
+    return 0
+  fi
+
+  if [ -L "$target" ]; then
+    warn "  symlink points somewhere else; replacing"
+    rm -f "$target"
+  fi
+
+  if [ -e "$target" ]; then
+    if repo_empty "$rp"; then
+      log "  adopting existing content into repo"
+      if [ -d "$target" ]; then
+        mkdir -p "$rp"
+        cp -a "$target/." "$rp/"
+        rm -rf "$target"
+      else
+        mkdir -p "$(dirname "$rp")"
+        cp -a "$target" "$rp"
+        rm -f "$target"
+      fi
+    else
+      mkdir -p "$BACKUP_DIR"
+      log "  backing up existing $( [ -d "$target" ] && echo dir || echo file ) to backup/$TIMESTAMP"
+      if [ -d "$target" ]; then
+        mv "$target" "$BACKUP_DIR/$(basename "$target")"
+      else
+        mkdir -p "$BACKUP_DIR/$(dirname "$rel")"
+        mv "$target" "$BACKUP_DIR/$rel"
+      fi
+    fi
+  fi
+
+  mkdir -p "$(dirname "$target")"
+  ln -s "$rp" "$target"
+  ok "  linked"
+}
+
+evaluate() {
+  local rel="$1" repo="$2"
+  local target="$HOME/$rel" rp="$REPO_ROOT/$repo"
+
+  if target_is_symlink_to "$target" "$rp"; then
+    echo "OK        $rel"
+  elif [ -L "$target" ]; then
+    echo "MISMATCH  $rel  (-> $(readlink "$target"), want $rp)"
+  elif [ -e "$target" ]; then
+    [ -d "$target" ] && k=dir || k=file
+    echo "UNLINKED  $rel  (real $k exists)"
+  else
+    echo "MISSING   $rel"
+  fi
+}
+
+do_check() {
+  local problems=0 rel repo
+  while IFS=$'\t' read -r rel repo; do
+    if [ -n "${FILTER:-}" ] && ! printf '%s%s' "$rel" "$repo" | grep -qF "$FILTER"; then
+      continue
+    fi
+    local s
+    s="$(evaluate "$rel" "$repo")"
+    printf '%s\n' "$s"
+    case "$s" in MISSING*|MISMATCH*|UNLINKED*) problems=$((problems+1)) ;; esac
+  done < <(entries)
+  if [ "$problems" -gt 0 ]; then
+    err "$problems link(s) need attention. Re-run: install.sh"
+    return 1
+  fi
+  ok "all links are correct"
+}
+
+do_apply() {
+  local matched=0 rel repo
+  while IFS=$'\t' read -r rel repo; do
+    if [ -n "$FILTER" ] && ! printf '%s%s' "$rel" "$repo" | grep -qF "$FILTER"; then
+      continue
+    fi
+    matched=1
+    apply_link "$rel" "$repo"
+  done < <(entries)
+
+  if [ "$matched" -eq 0 ]; then
+    err "no manifest entry matched filter: ${FILTER:-}"
+    return 1
+  fi
+  restore_modes
+}
+
+do_dryrun() {
+  local rel repo
+  while IFS=$'\t' read -r rel repo; do
+    if [ -n "$FILTER" ] && ! printf '%s%s' "$rel" "$repo" | grep -qF "$FILTER"; then
+      continue
+    fi
+    echo "$(evaluate "$rel" "$repo")"
+  done < <(entries)
+}
+
+case "$ACTION" in
+  --check)         do_check ;;
+  --dry-run)       do_dryrun ;;
+  --link)          ACTION=apply; FILTER="${2:-}"; do_apply ;;
+  apply|"")        do_apply ;;
+  *)               err "unknown action: $ACTION (use apply, --check, --dry-run, --link <substr>)"; exit 2 ;;
+esac

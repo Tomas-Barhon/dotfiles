@@ -1,0 +1,17 @@
+# Backups made by install.sh while re-linking
+backup/
+
+# Omarchy upgrade / safety backups (left in place, never tracked)
+*.bak
+*.bak.*
+*.omarchy-upgrade-*
+
+# Hypr auto-generated shader symlinks (created by omarchy/aether)
+hypr/shaders/
+
+# Aether generated / state files
+aether/theme/
+aether/custom/
+aether/themes/
+aether/migration-version
+aether/.protocol-handler-installed
