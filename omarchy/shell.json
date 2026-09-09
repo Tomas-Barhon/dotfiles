@@ -19,12 +19,15 @@
           "id": "omarchy.weather"
         },
         {
+          "id": "ollywarren.sparks"
+        },
+        {
           "id": "omarchy.system-update"
         }
       ],
       "left": [
         {
-          "id": "omarchy.menu"
+          "id": "tomikkdyne.menu"
         },
         {
           "id": "omarchy.workspaces"
@@ -33,6 +36,9 @@
       "right": [
         {
           "id": "omarchy.tray"
+        },
+        {
+          "id": "meviusisback.hw-monitor"
         },
         {
           "id": "omarchy.tailscale"
@@ -61,12 +67,18 @@
       ]
     },
     "position": "top",
-    "transparent": false
+    "transparent": true
   },
   "idle": {
     "lock": 300,
     "screensaver": 150
   },
   "plugins": [],
-  "version": 1
+  "version": 1,
+  "disabledPlugins": [
+    "omarchy.menu"
+  ],
+  "cloneSourceRestores": [
+    "tomikkdyne.menu"
+  ]
 }

@@ -7,12 +7,17 @@
 # Usage:
 #   install.sh            Apply: adopt values into the repo if missing, back
 #                         up any real files in the way, then create/fix links.
+#                         Also re-applies the Plymouth + SDDM boot logo from
+#                         omarchy/branding/boot-logo.{png,colors} via
+#                         `omarchy plymouth set` (prompts for sudo).
 #   install.sh --check    Verify every link; exit non-zero on any drift.
 #                         Run this after omarchy update/refresh to spot links
-#                         that a package upgrade replaced with real files.
+#                         that a package upgrade replaced with real files, and
+#                         to catch a stock boot logo that an update redeployed.
 #   install.sh --dry-run  Print what apply WOULD do without changing anything.
 #   install.sh --link <substr>  Restrict any mode to entries whose repo path
-#                               or target contains <substr>.
+#                               or target contains <substr>. Applies to the
+#                               boot-logo step too (e.g. --link boot-logo).
 
 set -u
 
@@ -28,6 +33,81 @@ FILTER="${2:-}"
 RESTRICTED_MODES=(
   "omarchy/shell.json"
 )
+
+# Boot/login branding. `install.sh` re-applies the custom Plymouth + SDDM
+# logo with `omarchy plymouth set` because `omarchy update` redeploys the
+# stock assets. Colors: first non-comment line = bg hex, second = text hex.
+BRANDING_DIR="$REPO_ROOT/omarchy/branding"
+BOOT_LOGO="$BRANDING_DIR/boot-logo.png"
+BOOT_COLORS="$BRANDING_DIR/boot-logo.colors"
+
+plymouth_filtered() { # honors --link <substr> like the manifest links do
+  [ -z "$FILTER" ] || printf '%s%s' "$BOOT_LOGO" "$BRANDING_DIR" | grep -qF "$FILTER"
+}
+
+plymouth_colors() { # prints "bg_hex text_hex" from boot-logo.colors (strips comments)
+  local bg="" text="" line
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%%#*}"
+    line="${line//[[:space:]]/}"
+    [ -z "$line" ] && continue
+    if [ -z "$bg" ]; then bg="$line"; else text="$line"; break; fi
+  done < "$BOOT_COLORS"
+  [ -n "$bg" ] && [ -n "$text" ] && printf '%s %s\n' "$bg" "$text"
+}
+
+plymouth_needs_apply() { # 0=needs re-apply, 1=already applied / cannot (missing)
+  [ -f "$BOOT_LOGO" ] || return 1
+  local installed="/usr/share/plymouth/themes/omarchy/logo.png" mine cur
+  [ -f "$installed" ] || return 0
+  mine="$(md5sum "$BOOT_LOGO" | cut -d' ' -f1)"
+  cur="$(md5sum "$installed" | cut -d' ' -f1)"
+  [ "$mine" = "$cur" ] && return 1
+  return 0
+}
+
+plymouth_state() {
+  if [ ! -f "$BOOT_LOGO" ]; then
+    echo "MISSING   $BOOT_LOGO (add omarchy/branding/boot-logo.png)"
+  elif [ ! -f "$BOOT_COLORS" ]; then
+    echo "MISSING   $BOOT_COLORS"
+  elif plymouth_needs_apply; then
+    echo "OUTDATED  plymouth/sddm logo"
+  else
+    echo "OK        plymouth/sddm logo"
+  fi
+}
+
+plymouth_apply() {
+  if ! plymouth_filtered; then return 0; fi
+  if [ ! -f "$BOOT_LOGO" ]; then
+    warn "no $BOOT_LOGO; skipping boot logo (add one to customize Plymouth/SDDM)"
+    return 0
+  fi
+  if [ ! -f "$BOOT_COLORS" ]; then
+    err "missing $BOOT_COLORS; cannot deploy boot logo"
+    return 1
+  fi
+  local colors
+  colors="$(plymouth_colors)"
+  if ! printf '%s' "$colors" | grep -qE '^[0-9a-fA-F]{6} [0-9a-fA-F]{6}$'; then
+    err "boot-logo.colors must hold two 6-digit hex colors (bg, text); got: $colors"
+    return 1
+  fi
+  if ! plymouth_needs_apply; then
+    ok "plymouth/sddm logo already current"
+    return 0
+  fi
+  # shellcheck disable=SC2086
+  set -- $colors
+  log "deploying boot logo via: omarchy plymouth set '$1' '$2' boot-logo.png"
+  if omarchy plymouth set "$1" "$2" "$BOOT_LOGO"; then
+    ok "boot logo deployed (Plymouth + SDDM)"
+  else
+    err "omarchy plymouth set failed"
+    return 1
+  fi
+}
 
 log()  { printf '\033[36m[dotfiles]\033[0m %s\n' "$*"; }
 warn() { printf '\033[33m[dotfiles]\033[0m %s\n' "$*" >&2; }
@@ -138,6 +218,12 @@ do_check() {
     printf '%s\n' "$s"
     case "$s" in MISSING*|MISMATCH*|UNLINKED*) problems=$((problems+1)) ;; esac
   done < <(entries)
+  if plymouth_filtered; then
+    local p
+    p="$(plymouth_state)"
+    printf '%s\n' "$p"
+    case "$p" in MISSING*|OUTDATED*) problems=$((problems+1)) ;; esac
+  fi
   if [ "$problems" -gt 0 ]; then
     err "$problems link(s) need attention. Re-run: install.sh"
     return 1
@@ -155,11 +241,12 @@ do_apply() {
     apply_link "$rel" "$repo"
   done < <(entries)
 
-  if [ "$matched" -eq 0 ]; then
+  if [ "$matched" -eq 0 ] && ! plymouth_filtered; then
     err "no manifest entry matched filter: ${FILTER:-}"
     return 1
   fi
   restore_modes
+  plymouth_apply
 }
 
 do_dryrun() {
@@ -170,6 +257,9 @@ do_dryrun() {
     fi
     echo "$(evaluate "$rel" "$repo")"
   done < <(entries)
+  if plymouth_filtered; then
+    plymouth_state
+  fi
 }
 
 case "$ACTION" in

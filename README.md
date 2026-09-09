@@ -36,6 +36,28 @@ Run `./install.sh --check` after `omarchy update` or `omarchy refresh ...`:
 those commands sometimes replace a symlink with a plain file, and this will
 spot it and `./install.sh` will restore the link.
 
+## Branding
+
+Two locally-branded assets live in the repo and are re-applied from
+`./install.sh` because `omarchy update` restores the stock Omarchy assets:
+
+- `omarchy/plugins/tomikkdyne.menu/assets/menu-logo.png` — the menu/launcher
+  button in the QuickShell bar (drives the leftmost bar widget via
+  `tomikkdyne.menu`, a clone of `omarchy.menu`). The bar hot-reloads on save.
+- `omarchy/branding/boot-logo.png` — the boot splash (Plymouth) and login
+  greeter (SDDM) logo. Replace it with your own image, then re-apply.
+- `omarchy/branding/boot-logo.colors` — two hex colors, one per line: the
+  splash background and the text/foreground color (no `#`).
+
+Apply just the boot logo (prompts for `sudo`; deploys to both Plymouth and
+SDDM and rebuilds the initramfs):
+
+```
+./install.sh --link boot-logo
+```
+
+`--check` and `--dry-run` also report the boot logo state.
+
 ## Hyprland
 
 Hyprland config is Lua-only (`hyprland.lua`); the legacy `.conf` API has been

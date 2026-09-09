@@ -1,0 +1,5 @@
+# Placeholder boot-splash colors for `omarchy plymouth set <bg> <text> <logo>`.
+#   line 1: background hex used by the Plymouth script, SDDM login, and fallback
+#   line 2: text hex used to recolor the bullet / entry / lock / progress sprites
+1a1b26
+ebdbb2
