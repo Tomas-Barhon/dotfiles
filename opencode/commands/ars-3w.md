@@ -1,0 +1,1 @@
+/home/tomikkdyne/opencode-academic-research/commands/ars-3w.md

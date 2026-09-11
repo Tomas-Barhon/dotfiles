@@ -18,3 +18,20 @@ aether/.protocol-handler-installed
 
 # nvim lockfile (rewritten by lazy.nvim on every plugin update)
 nvim/lazy-lock.json
+
+# opencode: plugin install artifacts + generated state (managed by installers)
+opencode/node_modules/
+opencode/package.json
+opencode/bun.lock
+opencode/package-lock.json
+opencode/.oh-my-opencode-slim/
+
+# opencode: skills bundled by the oh-my-opencode-slim installer (re-deployed on update)
+opencode/skills/clonedeps/
+opencode/skills/codemap/
+opencode/skills/deepwork/
+opencode/skills/oh-my-opencode-slim/
+opencode/skills/reflect/
+opencode/skills/simplify/
+opencode/skills/verification-planning/
+opencode/skills/worktrees/

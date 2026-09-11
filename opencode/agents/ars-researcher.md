@@ -1,0 +1,1 @@
+/home/tomikkdyne/opencode-academic-research/.opencode/agents/ars-researcher.md

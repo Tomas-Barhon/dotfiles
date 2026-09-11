@@ -15,3 +15,4 @@
 .config/aether/wallhaven.json	aether/wallhaven.json
 .config/nvim	nvim
 .config/tmux/tmux.conf	tmux/tmux.conf
+.config/opencode	opencode

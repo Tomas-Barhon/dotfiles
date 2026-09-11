@@ -1,0 +1,1 @@
+/home/tomikkdyne/opencode-academic-research/commands/ars-citation-check.md
