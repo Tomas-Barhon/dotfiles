@@ -13,11 +13,11 @@ hl.monitor({ output = "HDMI-A-1", mode = "1920x1080@60", position = "-1920x0", s
 hl.monitor({ output = "DP-4", mode = "1920x1080@60", position = "1920x0", scale = 1 })
 
 -- Workspaces 1-5 on DP-3, 6-10 on eDP-1 (migrated from the old monitors.conf).
-hl.workspace_rule({ workspace = "1", monitor = "DP-3", default = true })
-hl.workspace_rule({ workspace = "2", monitor = "DP-3" })
-hl.workspace_rule({ workspace = "3", monitor = "DP-3" })
-hl.workspace_rule({ workspace = "4", monitor = "DP-3" })
-hl.workspace_rule({ workspace = "5", monitor = "DP-3" })
+hl.workspace_rule({ workspace = "1", monitor = "DP-4", default = true })
+hl.workspace_rule({ workspace = "2", monitor = "DP-4" })
+hl.workspace_rule({ workspace = "3", monitor = "DP-4" })
+hl.workspace_rule({ workspace = "4", monitor = "DP-4" })
+hl.workspace_rule({ workspace = "5", monitor = "DP-4" })
 hl.workspace_rule({ workspace = "6", monitor = "eDP-1", default = true })
 hl.workspace_rule({ workspace = "7", monitor = "eDP-1" })
 hl.workspace_rule({ workspace = "8", monitor = "eDP-1" })
